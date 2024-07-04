@@ -1,7 +1,6 @@
 import aiohttp
 import os
 import sys
-
 from pipecat.frames.frames import EndFrame, LLMMessagesFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -12,7 +11,6 @@ from pipecat.processors.aggregators.llm_response import (
 )
 from pipecat.services.openai import OpenAILLMService
 from pipecat.services.deepgram import DeepgramSTTService, DeepgramTTSService
-from pipecat.services.elevenlabs import ElevenLabsTTSService
 from pipecat.transports.network.fastapi_websocket import FastAPIWebsocketTransport, FastAPIWebsocketParams
 from pipecat.vad.silero import SileroVADAnalyzer
 from pipecat.serializers.twilio import TwilioFrameSerializer
@@ -24,7 +22,6 @@ load_dotenv(override=True)
 
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
-
 
 async def run_bot(websocket_client, stream_sid):
     async with aiohttp.ClientSession() as session:
@@ -42,14 +39,13 @@ async def run_bot(websocket_client, stream_sid):
 
         llm = OpenAILLMService(
             api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-3.5-turbo",)
+            model="gpt-3.5-turbo")
 
         stt = DeepgramSTTService(api_key=os.getenv('DEEPGRAM_API_KEY'))
 
         tts = DeepgramTTSService(
             aiohttp_session=session,
-            api_key=os.getenv("Deepgram_API_KEY")),
-            
+            api_key=os.getenv("DEEPGRAM_API_KEY"))
 
         messages = [
             {
@@ -86,4 +82,13 @@ async def run_bot(websocket_client, stream_sid):
 
         runner = PipelineRunner(handle_sigint=False)
 
-        await runner.run(task)
+        try:
+            await runner.run(task)
+        except Exception as e:
+            logger.error(f"Error in run_bot: {str(e)}")
+        finally:
+            # Create an EndFrame to pass to the stop method
+            end_frame = EndFrame()
+            await stt.stop(end_frame)  # Pass the EndFrame to the stop method
+            if not websocket_client.client_state == websocket_client.client_state.DISCONNECTED:
+                await websocket_client.close()
