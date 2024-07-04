@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: twilio-chatbot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+    plan: free # or choose an appropriate plan
+    autoDeploy: true
+    healthCheckPath: /start_call
+    disk:
+      name: twilio-chatbot-data
+      mountPath: /data
+      sizeGB: 1
+    domains:
+      - https://andrea-tw.onrender.com
