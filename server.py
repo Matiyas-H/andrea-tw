@@ -52,13 +52,24 @@ async def initiate_outbound_call(background_tasks: BackgroundTasks, to_number: s
     background_tasks.add_task(make_call)
     return {"message": "Outbound call initiated"}
 
-@app.post('/outbound_call_handler')
-async def outbound_call_handler():
-    response = VoiceResponse()
-    # response.say("Hello, this is an AI assistant calling. Please wait while I connect you.")
-    response.connect().stream(url=f"wss://{os.environ.get('RENDER_EXTERNAL_URL')}/ws")
-    logger.info(f"Outbound call TwiML: {response}")
-    return HTMLResponse(content=str(response), media_type="application/xml")
+@app.post('/initiate_outbound_call')
+async def initiate_outbound_call(background_tasks: BackgroundTasks, to_number: str):
+    def make_call():
+        render_url = os.environ.get('RENDER_EXTERNAL_URL', '')
+        # Remove 'https://' if it's already in the RENDER_EXTERNAL_URL
+        if render_url.startswith('https://'):
+            render_url = render_url[8:]
+        call_url = f"https://{render_url}/outbound_call_handler"
+        logger.info(f"Initiating outbound call to URL: {call_url}")
+        call = twilio_client.calls.create(
+            url=call_url,
+            to=to_number,
+            from_=os.environ['TWILIO_PHONE_NUMBER']
+        )
+        logger.info(f"Call SID: {call.sid}")
+
+    background_tasks.add_task(make_call)
+    return {"message": "Outbound call initiated"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

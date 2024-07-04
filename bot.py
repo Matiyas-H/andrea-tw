@@ -23,7 +23,8 @@ load_dotenv(override=True)
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
-async def run_bot(websocket_client, stream_sid,is_outbound=False):
+async def run_bot(websocket_client, stream_sid, is_outbound=False):
+    logger.info(f"Starting run_bot with stream_sid: {stream_sid}, is_outbound: {is_outbound}")
     async with aiohttp.ClientSession() as session:
         transport = FastAPIWebsocketTransport(
             websocket=websocket_client,
@@ -50,7 +51,7 @@ async def run_bot(websocket_client, stream_sid,is_outbound=False):
         messages = [
             {
                 "role": "system",
-                "content": "say hello",
+                "content": "You are an AI assistant making an outbound call." if is_outbound else "You are an AI assistant handling an inbound call.",
             },
         ]
 
@@ -72,8 +73,8 @@ async def run_bot(websocket_client, stream_sid,is_outbound=False):
         @transport.event_handler("on_client_connected")
         async def on_client_connected(transport, client):
             # Kick off the conversation.
-            messages.append(
-                {"role": "system", "content": "Please introduce yourself to the user."})
+            intro_message = "Hello, this is an AI assistant calling. How may I assist you today?" if is_outbound else "Hello, thank you for calling. How may I assist you today?"
+            messages.append({"role": "system", "content": intro_message})
             await task.queue_frames([LLMMessagesFrame(messages)])
 
         @transport.event_handler("on_client_disconnected")
@@ -83,11 +84,13 @@ async def run_bot(websocket_client, stream_sid,is_outbound=False):
         runner = PipelineRunner(handle_sigint=False)
 
         try:
-            await stt.start()  # Initialize the Deepgram STT service
+            # We don't need to explicitly call start() on stt
             await runner.run(task)
         except Exception as e:
             logger.error(f"Error in run_bot: {str(e)}")
         finally:
-            await stt.stop()  # Ensure Deepgram STT service is properly closed
+            # Create an EndFrame to pass to the stop method
+            end_frame = EndFrame()
+            await stt.stop(end_frame)  # Pass the EndFrame to the stop method
             if not websocket_client.client_state == websocket_client.client_state.DISCONNECTED:
                 await websocket_client.close()
