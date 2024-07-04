@@ -23,7 +23,7 @@ load_dotenv(override=True)
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
-async def run_bot(websocket_client, stream_sid):
+async def run_bot(websocket_client, stream_sid,is_outbound=False):
     async with aiohttp.ClientSession() as session:
         transport = FastAPIWebsocketTransport(
             websocket=websocket_client,
@@ -83,12 +83,11 @@ async def run_bot(websocket_client, stream_sid):
         runner = PipelineRunner(handle_sigint=False)
 
         try:
+            await stt.start()  # Initialize the Deepgram STT service
             await runner.run(task)
         except Exception as e:
             logger.error(f"Error in run_bot: {str(e)}")
         finally:
-            # Create an EndFrame to pass to the stop method
-            end_frame = EndFrame()
-            await stt.stop(end_frame)  # Pass the EndFrame to the stop method
+            await stt.stop()  # Ensure Deepgram STT service is properly closed
             if not websocket_client.client_state == websocket_client.client_state.DISCONNECTED:
                 await websocket_client.close()

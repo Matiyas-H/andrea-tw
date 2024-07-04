@@ -55,7 +55,7 @@ async def initiate_outbound_call(background_tasks: BackgroundTasks, to_number: s
 @app.post('/outbound_call_handler')
 async def outbound_call_handler():
     response = VoiceResponse()
-    response.say("Hello, this is an AI assistant calling. Please wait while I connect you.")
+    # response.say("Hello, this is an AI assistant calling. Please wait while I connect you.")
     response.connect().stream(url=f"wss://{os.environ.get('RENDER_EXTERNAL_URL')}/ws")
     logger.info(f"Outbound call TwiML: {response}")
     return HTMLResponse(content=str(response), media_type="application/xml")
