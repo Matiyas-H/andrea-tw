@@ -7,6 +7,14 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: RENDER_EXTERNAL_URL
+        sync: false
     plan: free # or choose an appropriate plan
     autoDeploy: true
     healthCheckPath: /start_call
