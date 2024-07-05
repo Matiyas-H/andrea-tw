@@ -46,16 +46,14 @@ async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
             api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-3.5-turbo")
 
-        stt = DeepgramSTTService(api_key=os.getenv('DEEPGRAM_API_KEY'))
+        stt = DeepgramSTTService(aiohttp_session=session, api_key=os.getenv('DEEPGRAM_API_KEY'), language="it")
 
-        tts = DeepgramTTSService(
+        tts = ElevenLabsTTSService(
             aiohttp_session=session,
-            api_key=os.getenv("DEEPGRAM_API_KEY"))
-        
-        # tts = ElevenLabsTTSService(
-        #     aiohttp_session=session,
-        #     api_key=os.getenv("ELEVENLABS_API_KEY"),
-        #     voice_id=os.getenv("ELEVENLABS_VOICE_ID"),
+            api_key=os.getenv("ELEVENLABS_API_KEY"),
+            model="eleven_multilingual_v2",
+            voice_id="ELEVENLABS_VOICE_ID",
+            language="it")
         
 
         messages = [
