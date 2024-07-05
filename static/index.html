@@ -4,71 +4,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Initiate Outbound Call</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-
-        form {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="tel"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <title>Make Outbound Call</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <form id="callForm">
-        <form id="callForm">
-            <h2>Initiate Outbound Call</h2>
-            <input type="tel" id="fromNumber" placeholder="Enter your Twilio phone number" required>
-            <input type="tel" id="toNumber" placeholder="Enter recipient's phone number" required>
-            <button type="submit">Call</button>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Make Outbound Call</h1>
+        <form id="callForm" class="space-y-4">
+            <div>
+                <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number:</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    placeholder="+1234567890">
+            </div>
+            <button type="submit"
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Make Call
+            </button>
         </form>
-        
-        <script>
-            document.getElementById('callForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                const fromNumber = document.getElementById('fromNumber').value;
-                const toNumber = document.getElementById('toNumber').value;
-                fetch(`/initiate_outbound_call?from_number=${encodeURIComponent(fromNumber)}&to_number=${encodeURIComponent(toNumber)}`, {
-                    method: 'POST'
+        <div id="result" class="mt-4 text-sm"></div>
+    </div>
+
+    <script>
+        document.getElementById('callForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const resultDiv = document.getElementById('result');
+
+            fetch('/make_call', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ to_number: phoneNumber }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
                 })
-                    .then(response => response.json())
-                    .then(data => alert(data.message))
-                    .catch(error => alert('Error initiating call'));
-            });
-        </script>
+                .then(data => {
+                    resultDiv.textContent = `Call initiated. Call SID: ${data.call_sid}`;
+                    resultDiv.className = 'mt-4 text-sm text-green-600';
+                })
+                .catch((error) => {
+                    resultDiv.textContent = `Error: ${error.message}`;
+                    resultDiv.className = 'mt-4 text-sm text-red-600';
+                });
+        });
+    </script>
 </body>
 
 </html>
