@@ -23,8 +23,7 @@ load_dotenv(override=True)
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
-async def run_bot(websocket_client, stream_sid, is_outbound=False):
-    logger.info(f"Starting run_bot with stream_sid: {stream_sid}, is_outbound: {is_outbound}")
+async def run_bot(websocket_client, stream_sid):
     async with aiohttp.ClientSession() as session:
         transport = FastAPIWebsocketTransport(
             websocket=websocket_client,
@@ -51,7 +50,7 @@ async def run_bot(websocket_client, stream_sid, is_outbound=False):
         messages = [
             {
                 "role": "system",
-                "content": "You are an AI assistant making an outbound call." if is_outbound else "You are an AI assistant handling an inbound call.",
+                "content": "you are a friend",
             },
         ]
 
@@ -73,8 +72,8 @@ async def run_bot(websocket_client, stream_sid, is_outbound=False):
         @transport.event_handler("on_client_connected")
         async def on_client_connected(transport, client):
             # Kick off the conversation.
-            intro_message = "Hello, this is an AI assistant calling. How may I assist you today?" if is_outbound else "Hello, thank you for calling. How may I assist you today?"
-            messages.append({"role": "system", "content": intro_message})
+            messages.append(
+                {"role": "system", "content": "jusy say hello"})
             await task.queue_frames([LLMMessagesFrame(messages)])
 
         @transport.event_handler("on_client_disconnected")
@@ -84,7 +83,6 @@ async def run_bot(websocket_client, stream_sid, is_outbound=False):
         runner = PipelineRunner(handle_sigint=False)
 
         try:
-            # We don't need to explicitly call start() on stt
             await runner.run(task)
         except Exception as e:
             logger.error(f"Error in run_bot: {str(e)}")

@@ -49,23 +49,26 @@
 
 <body>
     <form id="callForm">
-        <h2>Initiate Outbound Call</h2>
-        <input type="tel" id="phoneNumber" placeholder="Enter phone number" required>
-        <button type="submit">Call</button>
-    </form>
-
-    <script>
-        document.getElementById('callForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            fetch(`/initiate_outbound_call?to_number=${encodeURIComponent(phoneNumber)}`, {
-                method: 'POST'
-            })
-                .then(response => response.json())
-                .then(data => alert(data.message))
-                .catch(error => alert('Error initiating call'));
-        });
-    </script>
+        <form id="callForm">
+            <h2>Initiate Outbound Call</h2>
+            <input type="tel" id="fromNumber" placeholder="Enter your Twilio phone number" required>
+            <input type="tel" id="toNumber" placeholder="Enter recipient's phone number" required>
+            <button type="submit">Call</button>
+        </form>
+        
+        <script>
+            document.getElementById('callForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const fromNumber = document.getElementById('fromNumber').value;
+                const toNumber = document.getElementById('toNumber').value;
+                fetch(`/initiate_outbound_call?from_number=${encodeURIComponent(fromNumber)}&to_number=${encodeURIComponent(toNumber)}`, {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => alert(data.message))
+                    .catch(error => alert('Error initiating call'));
+            });
+        </script>
 </body>
 
 </html>
