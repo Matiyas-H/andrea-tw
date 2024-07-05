@@ -1,6 +1,7 @@
 import aiohttp
 import os
 import sys
+import torch
 from pipecat.frames.frames import EndFrame, LLMMessagesFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -24,6 +25,27 @@ load_dotenv(override=True)
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
+
+class CachedSileroVADAnalyzer(SileroVADAnalyzer):
+    def __init__(self, params: VADParams = VADParams()):
+        super().__init__(params)
+        self._model = None
+        self._init_model()
+
+    def _init_model(self):
+        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "silero_vad")
+        os.makedirs(cache_dir, exist_ok=True)
+        model_path = os.path.join(cache_dir, "silero_vad.pt")
+
+        if os.path.exists(model_path):
+            self._model = torch.jit.load(model_path)
+        else:
+            self._model, _ = torch.hub.load(repo_or_dir="snakers4/silero-vad:master",
+                                            model="silero_vad",
+                                            force_reload=True,
+                                            onnx=False)
+            torch.jit.save(self._model, model_path)
+
 async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
     async with aiohttp.ClientSession() as session:
         transport = FastAPIWebsocketTransport(
@@ -32,8 +54,10 @@ async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
                 audio_out_enabled=True,
                 add_wav_header=False,
                 vad_enabled=True,
-                vad_analyzer=SileroVADAnalyzer(params=VADParams(
-                    stop_secs=0.2)),
+                vad_analyzer=CachedSileroVADAnalyzer(params=VADParams(
+                    stop_secs=0.1,
+                    start_secs=0.05
+                )),
                 vad_audio_passthrough=True,
                 serializer=TwilioFrameSerializer(stream_sid)
             )
