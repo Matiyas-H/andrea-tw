@@ -53,7 +53,7 @@ async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
             api_key=os.getenv("ELEVENLABS_API_KEY"),
             model="eleven_multilingual_v2",
             voice_id="ELEVENLABS_VOICE_ID",
-            language="it")
+            )
         
 
         messages = [
