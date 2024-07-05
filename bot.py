@@ -9,12 +9,13 @@ from pipecat.processors.aggregators.llm_response import (
     LLMAssistantResponseAggregator,
     LLMUserResponseAggregator
 )
+from pipecat.services.elevenlabs import ElevenLabsTTSService
 from pipecat.services.openai import OpenAILLMService
 from pipecat.services.deepgram import DeepgramSTTService, DeepgramTTSService
 from pipecat.transports.network.fastapi_websocket import FastAPIWebsocketTransport, FastAPIWebsocketParams
 from pipecat.vad.silero import SileroVADAnalyzer
 from pipecat.serializers.twilio import TwilioFrameSerializer
-
+from pipecat.vad.vad_analyzer import VADParams
 from loguru import logger
 
 from dotenv import load_dotenv
@@ -31,7 +32,8 @@ async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
                 audio_out_enabled=True,
                 add_wav_header=False,
                 vad_enabled=True,
-                vad_analyzer=SileroVADAnalyzer(),
+                vad_analyzer=SileroVADAnalyzer(params=VADParams(
+                    stop_secs=0.2)),
                 vad_audio_passthrough=True,
                 serializer=TwilioFrameSerializer(stream_sid)
             )
@@ -43,9 +45,15 @@ async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
 
         stt = DeepgramSTTService(api_key=os.getenv('DEEPGRAM_API_KEY'))
 
-        tts = DeepgramTTSService(
+        # tts = DeepgramTTSService(
+        #     aiohttp_session=session,
+        #     api_key=os.getenv("DEEPGRAM_API_KEY"))
+        
+        tts = ElevenLabsTTSService(
             aiohttp_session=session,
-            api_key=os.getenv("DEEPGRAM_API_KEY"))
+            api_key=os.getenv("ELEVENLABS_API_KEY"),
+            voice_id=os.getenv("ELEVENLABS_VOICE_ID"),
+        )
 
         messages = [
             {
