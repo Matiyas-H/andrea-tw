@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <Stream url="wss://andrea-tw.onrender.com/ws"></Stream>
+    <Stream url="wss://andrea-tw.onrender.com/ws">
+      <Parameter name="systemPrompt" value="{{systemPrompt}}"/>
+      <Parameter name="initialMessage" value="{{initialMessage}}"/>
+    </Stream>
   </Connect>
   <Pause length="40"/>
 </Response>

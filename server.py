@@ -26,6 +26,8 @@ from pydantic import BaseModel
 
 class CallRequest(BaseModel):
     to_number: str
+    system_prompt: str = "You are a friendly AI assistant."
+    initial_message: str = "Hello! How can I help you today?"
 
 # Twilio client setup
 account_sid = os.environ['TWILIO_ACCOUNT_SID']
@@ -38,12 +40,31 @@ async def get_call_page():
         content = file.read()
     return HTMLResponse(content=content)
 
+
+
+
+import urllib.parse
+
 @app.post("/make_call")
 async def make_call(call_request: CallRequest):
     print(f"Received request to call: {call_request.to_number}")
     try:
+        encoded_system_prompt = urllib.parse.quote(call_request.system_prompt)
+        encoded_initial_message = urllib.parse.quote(call_request.initial_message)
+        
+        twiml = f'''
+        <Response>
+          <Connect>
+            <Stream url="wss://andrea-tw.onrender.com/ws">
+              <Parameter name="systemPrompt" value="{encoded_system_prompt}"/>
+              <Parameter name="initialMessage" value="{encoded_initial_message}"/>
+            </Stream>
+          </Connect>
+        </Response>
+        '''
+        
         call = client.calls.create(
-            url='https://andrea-tw.onrender.com/start_call',
+            twiml=twiml,
             to=call_request.to_number,
             from_=os.environ['TWILIO_PHONE_NUMBER']
         )
@@ -52,6 +73,24 @@ async def make_call(call_request: CallRequest):
     except Exception as e:
         print(f"Error initiating call: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+
+# @app.post("/make_call")
+# async def make_call(call_request: CallRequest):
+#     print(f"Received request to call: {call_request.to_number}")
+#     try:
+#         call = client.calls.create(
+#             url=' https://28d6-176-72-35-238.ngrok-free.app/start_call',
+#             to=call_request.to_number,
+#             from_=os.environ['TWILIO_PHONE_NUMBER']
+#         )
+#         print(f"Call initiated with SID: {call.sid}")
+#         return {"message": "Call initiated", "call_sid": call.sid}
+#     except Exception as e:
+#         print(f"Error initiating call: {str(e)}")
+#         raise HTTPException(status_code=500, detail=str(e))
     
     
 
@@ -74,8 +113,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
     print(call_data, flush=True)
     stream_sid = call_data['start']['streamSid']
+    
+    # Extract custom prompts from call_data
+    parameters = call_data.get('start', {}).get('customParameters', {})
+    system_prompt = parameters.get('systemPrompt', "You are a friendly AI assistant.")
+    initial_message = parameters.get('initialMessage', "Hello! How can I help you today?")
+    
+    print(f"System Prompt: {system_prompt}")
+    print(f"Initial Message: {initial_message}")
+    
     print("WebSocket connection accepted")
-    await run_bot(websocket, stream_sid)
+    await run_bot(websocket, stream_sid, system_prompt, initial_message)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8765))

@@ -23,7 +23,7 @@ load_dotenv(override=True)
 logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
-async def run_bot(websocket_client, stream_sid):
+async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
     async with aiohttp.ClientSession() as session:
         transport = FastAPIWebsocketTransport(
             websocket=websocket_client,
@@ -50,7 +50,7 @@ async def run_bot(websocket_client, stream_sid):
         messages = [
             {
                 "role": "system",
-                "content": "you are a friend",
+                "content": system_prompt,
             },
         ]
 
@@ -73,7 +73,7 @@ async def run_bot(websocket_client, stream_sid):
         async def on_client_connected(transport, client):
             # Kick off the conversation.
             messages.append(
-                {"role": "system", "content": "jusy say hello"})
+                {"role": "system", "content": initial_message})
             await task.queue_frames([LLMMessagesFrame(messages)])
 
         @transport.event_handler("on_client_disconnected")
