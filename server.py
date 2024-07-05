@@ -55,7 +55,7 @@ async def make_call(call_request: CallRequest):
         twiml = f'''
         <Response>
           <Connect>
-            <Stream url="wss:andrea-tw-jqft.onrender.com/ws">
+            <Stream url="wss://andrea-tw-jqft.onrender.com/ws">
               <Parameter name="systemPrompt" value="{encoded_system_prompt}"/>
               <Parameter name="initialMessage" value="{encoded_initial_message}"/>
             </Stream>
@@ -94,10 +94,34 @@ async def make_call(call_request: CallRequest):
     
     
 
+# @app.post('/start_call')
+# async def start_call():
+#     print("POST TwiML")
+#     return HTMLResponse(content=open("templates/streams.xml").read(), media_type="application/xml")
+
+
 @app.post('/start_call')
-async def start_call():
+async def start_call(request: Request):
     print("POST TwiML")
-    return HTMLResponse(content=open("templates/streams.xml").read(), media_type="application/xml")
+    body = await request.form()
+    system_prompt = body.get('SystemPrompt', "You are a friendly AI assistant.")
+    initial_message = body.get('InitialMessage', "Hello! How can I help you today?")
+    
+    twiml = f'''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Response>
+      <Connect>
+        <Stream url="wss://andrea-tw-jqft.onrender.com/ws">
+          <Parameter name="systemPrompt" value="{system_prompt}"/>
+          <Parameter name="initialMessage" value="{initial_message}"/>
+        </Stream>
+      </Connect>
+      <Pause length="40"/>
+    </Response>
+    '''
+    
+    return HTMLResponse(content=twiml, media_type="application/xml")
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
