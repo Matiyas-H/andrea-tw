@@ -55,7 +55,7 @@ async def make_call(call_request: CallRequest):
         twiml = f'''
         <Response>
           <Connect>
-            <Stream url="wss://andrea-tw-jqft.onrender.com/ws">
+            <Stream url="wss:andrea-tw-jqft.onrender.com/ws">
               <Parameter name="systemPrompt" value="{encoded_system_prompt}"/>
               <Parameter name="initialMessage" value="{encoded_initial_message}"/>
             </Stream>
