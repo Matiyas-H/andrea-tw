@@ -52,7 +52,7 @@ async def run_bot(websocket_client, stream_sid, system_prompt, initial_message):
             aiohttp_session=session,
             api_key=os.getenv("ELEVENLABS_API_KEY"),
             model="eleven_multilingual_v2",
-            voice_id="ELEVENLABS_VOICE_ID",
+            voice_id=os.getenv("ELEVENLABS_VOICE_ID"),
             )
         
 
