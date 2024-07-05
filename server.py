@@ -26,8 +26,14 @@ async def start_call():
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     start_data = websocket.iter_text()
-    await start_data.anext()
-    call_data = json.loads(await start_data.anext())
+ 
+    first_item = await start_data.__anext__()
+    try:
+        call_data = json.loads(await start_data.__anext__())
+    except StopAsyncIteration:
+        print("No more data in the async generator")
+        return
+
     print(call_data, flush=True)
     stream_sid = call_data['start']['streamSid']
     print("WebSocket connection accepted")
